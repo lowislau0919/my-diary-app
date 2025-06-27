@@ -1,91 +1,115 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <title>ğŸ“˜ æˆ‘çš„æ—¥æ›†</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
-    <style>
-      body {
-        background: #dcbaff;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-      }
-      .hidden { display: none; }
-    </style>
-  </head>
-  <body>
-    <section class="section" id="login-section">
-      <div class="container has-text-centered">
-        <h1 class="title has-text-white">æ­¡è¿ä¾†åˆ°æˆ‘çš„æ—¥æ›†</h1>
-        <button class="button is-success is-medium" onclick="login()">ä½¿ç”¨ Google ç™»å…¥</button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>?? §Úªº¤é¾ä</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+  <style>
+    body { background: #dcbaff; min-height: 100vh; margin: 0; padding: 0; }
+    .hidden { display: none; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 1rem; }
+    .calendar div { background: white; padding: 10px; text-align: center; border-radius: 6px; }
+    .calendar .today { background: #ffd1dc; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <section class="section" id="login-section">
+    <div class="container has-text-centered">
+      <h1 class="title has-text-white">Åwªï¨Ó¨ì§Úªº¤é¾ä</h1>
+      <button class="button is-success is-medium" onclick="login()">¨Ï¥Î Google µn¤J</button>
+    </div>
+  </section>
+
+  <div class="main-container hidden" id="app-section">
+    <aside class="menu p-4 has-background-white">
+      <p class="menu-label">¿ï³æ</p>
+      <ul class="menu-list">
+        <li><a class="is-active" onclick="showPage('calendar')">?? ¦æ¨Æ¾ä</a></li>
+        <li><a onclick="showPage('diary')">?? ¤é°O¡]µy«á±À¥X¡^</a></li>
+        <li><a onclick="showPage('export')">?? ¶×¥X¡]µy«á±À¥X¡^</a></li>
+      </ul>
+      <button class="button is-danger mt-4" onclick="logout()">µn¥X</button>
+    </aside>
+
+    <section class="section" id="calendar-page">
+      <h2 class="title">?? ¦æ¨Æ¾ä</h2>
+      <p>¤µ¤Ñ¬O¡G<span id="today-date"></span></p>
+      <div class="calendar" id="calendar-grid"></div>
     </section>
 
-    <div class="main-container hidden" id="app-section">
-      <aside class="menu p-4 has-background-white">
-        <p class="menu-label">é¸å–®</p>
-        <ul class="menu-list">
-          <li><a class="is-active" onclick="showPage('calendar')">ğŸ“… è¡Œäº‹æ›†</a></li>
-          <li><a onclick="showPage('diary')">ğŸ“– æ—¥è¨˜ï¼ˆç¨å¾Œæ¨å‡ºï¼‰</a></li>
-          <li><a onclick="showPage('export')">ğŸ“¤ åŒ¯å‡ºï¼ˆç¨å¾Œæ¨å‡ºï¼‰</a></li>
-        </ul>
-        <button class="button is-danger mt-4" onclick="logout()">ç™»å‡º</button>
-      </aside>
+    <section class="section hidden" id="diary-page">
+      <h2 class="title">?? ¤é°O¥\¯àµy«á±À¥X</h2>
+    </section>
 
-      <section class="section" id="calendar-page">
-        <h2 class="title">ğŸ“… è¡Œäº‹æ›†</h2>
-        <p>ä»Šå¤©æ˜¯ï¼š<span id="today-date"></span></p>
-      </section>
-      <section class="section hidden" id="diary-page">
-        <h2 class="title">ğŸ“– æ—¥è¨˜åŠŸèƒ½ç¨å¾Œæ¨å‡º</h2>
-      </section>
-      <section class="section hidden" id="export-page">
-        <h2 class="title">ğŸ“¤ åŒ¯å‡ºåŠŸèƒ½ç¨å¾Œæ¨å‡º</h2>
-      </section>
-    </div>
+    <section class="section hidden" id="export-page">
+      <h2 class="title">?? ¶×¥X¥\¯àµy«á±À¥X</h2>
+    </section>
+  </div>
 
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
-        authDomain: "my-diary-app-6eb1e.firebaseapp.com",
-        projectId: "my-diary-app-6eb1e",
-        storageBucket: "my-diary-app-6eb1e.appspot.com",
-        messagingSenderId: "1027204805080",
-        appId: "1:1027204805080:web:52446129ee5d06e25242ad"
-      };
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
+      authDomain: "my-diary-app-6eb1e.firebaseapp.com",
+      projectId: "my-diary-app-6eb1e",
+      storageBucket: "my-diary-app-6eb1e.appspot.com",
+      messagingSenderId: "1027204805080",
+      appId: "1:1027204805080:web:52446129ee5d06e25242ad"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-      function login() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider);
+    function login() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function showPage(pageId) {
+      ['calendar-page', 'diary-page', 'export-page'].forEach(id =>
+        document.getElementById(id).classList.add('hidden'));
+      document.getElementById(${pageId}-page).classList.remove('hidden');
+    }
+
+    function generateCalendar() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const calendar = document.getElementById("calendar-grid");
+      calendar.innerHTML = '';
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        calendar.appendChild(empty);
       }
 
-      function logout() {
-        auth.signOut();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.innerText = d;
+        if (d === today.getDate()) dayDiv.classList.add("today");
+        calendar.appendChild(dayDiv);
       }
+    }
 
-      function showPage(pageId) {
-        const pages = ['calendar-page', 'diary-page', 'export-page'];
-        pages.forEach(id => document.getElementById(id).classList.add('hidden'));
-        document.getElementById(pageId + '-page').classList.remove('hidden');
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("login-section").classList.add("hidden");
+        document.getElementById("app-section").classList.remove("hidden");
+        document.getElementById("today-date").innerText = new Date().toISOString().split('T')[0];
+        generateCalendar();
+      } else {
+        document.getElementById("login-section").classList.remove("hidden");
+        document.getElementById("app-section").classList.add("hidden");
       }
-
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          document.getElementById('login-section').classList.add('hidden');
-          document.getElementById('app-section').classList.remove('hidden');
-          document.getElementById('today-date').innerText = new Date().toISOString().split('T')[0];
-        } else {
-          document.getElementById('login-section').classList.remove('hidden');
-          document.getElementById('app-section').classList.add('hidden');
-        }
-      });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
