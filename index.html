@@ -1,65 +1,97 @@
 <!DOCTYPE html>
-<html lang='zh-Hant'>
+<html lang="zh-Hant">
 <head>
-  <meta charset='UTF-8' />
-  <title>📘 我的日曆</title>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-  <link href='https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css' rel='stylesheet'>
-  <script src='https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js'></script>
-  <script src='https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js'></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的日記和行事曆</title>
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <style>
-    body { background: #dcbaff; min-height: 100vh; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color, #f0eaff);
+      color: var(--font-color, #000);
+    }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .calendar div { padding: 6px; border-radius: 4px; text-align: center; background: white; }
+    .today { background: #ffd1dc; font-weight: bold; }
+    .floating-btn {
+      position: fixed; bottom: 16px; right: 16px; background: #00d1b2; color: white;
+      border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 32px;
+    }
     .hidden { display: none; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 1rem; }
-    .calendar div { background: white; padding: 10px; text-align: center; border-radius: 6px; }
-    .calendar .today { background: #ffd1dc; font-weight: bold; }
   </style>
 </head>
 <body>
-  <section class='section' id='login-section'>
-    <div class='container has-text-centered'>
-      <h1 class='title has-text-white'>歡迎來到我的日曆</h1>
-      <button class='button is-success is-medium' onclick='login()'>使用 Google 登入</button>
+  <section id="login" class="section has-text-centered">
+    <h1 class="title">歡迎來到我的日記和行事曆</h1>
+    <button class="button is-primary" onclick="login()">使用 Google 登入</button>
+  </section>
+
+  <section id="app" class="section hidden">
+    <div class="tabs is-toggle is-fullwidth">
+      <ul>
+        <li class="is-active"><a onclick="switchPage('calendar')">行事曆</a></li>
+        <li><a onclick="switchPage('diary')">日記</a></li>
+        <li><a onclick="switchPage('expense')">收支</a></li>
+        <li><a onclick="switchPage('settings')">設定</a></li>
+      </ul>
+    </div>
+
+    <div id="calendar-page">
+      <h2 class="title is-4">行事曆 - <span id="today"></span></h2>
+      <div id="calendar" class="calendar"></div>
+    </div>
+
+    <div id="diary-page" class="hidden">
+      <textarea id="diary-text" class="textarea" placeholder="今日日記..."></textarea>
+      <input type="file" id="photo-upload" accept="image/*">
+      <button class="button is-link" onclick="saveDiary()">儲存</button>
+      <button class="button is-light" onclick="exportDiary('pdf')">匯出 PDF</button>
+      <button class="button is-light" onclick="exportDiary('csv')">匯出 CSV</button>
+    </div>
+
+    <div id="expense-page" class="hidden">
+      <input id="amount" type="number" class="input" placeholder="金額">
+      <input id="note" type="text" class="input" placeholder="說明">
+      <button class="button is-info" onclick="addExpense()">新增</button>
+      <canvas id="expense-chart"></canvas>
+      <ul id="expense-list"></ul>
+    </div>
+
+    <div id="settings-page" class="hidden">
+      <label>背景顏色</label>
+      <input type="color" onchange="setColor('--bg-color', this.value)">
+      <label>字體顏色</label>
+      <input type="color" onchange="setColor('--font-color', this.value)">
+      <label>PIN 密碼</label>
+      <input type="password" id="pin" class="input">
+      <button class="button is-danger" onclick="setPin()">設定 PIN</button>
+      <button class="button is-warning" onclick="logout()">登出</button>
     </div>
   </section>
 
-  <div class='main-container hidden' id='app-section'>
-    <aside class='menu p-4 has-background-white'>
-      <p class='menu-label'>選單</p>
-      <ul class='menu-list'>
-        <li><a class='is-active' onclick="showPage('calendar')">📅 行事曆</a></li>
-        <li><a onclick="showPage('diary')">📖 日記（稍後推出）</a></li>
-        <li><a onclick="showPage('export')">📤 匯出（稍後推出）</a></li>
-      </ul>
-      <button class='button is-danger mt-4' onclick='logout()'>登出</button>
-    </aside>
-
-    <section class='section' id='calendar-page'>
-      <h2 class='title'>📅 行事曆</h2>
-      <p>今天是：<span id='today-date'></span></p>
-      <div class='calendar' id='calendar-grid'></div>
-    </section>
-
-    <section class='section hidden' id='diary-page'>
-      <h2 class='title'>📖 日記功能稍後推出</h2>
-    </section>
-
-    <section class='section hidden' id='export-page'>
-      <h2 class='title'>📤 匯出功能稍後推出</h2>
-    </section>
-  </div>
+  <button class="floating-btn" onclick="showDiaryForm()">+</button>
 
   <script>
     const firebaseConfig = {
-      apiKey: 'AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY',
-      authDomain: 'my-diary-app-6eb1e.firebaseapp.com',
-      projectId: 'my-diary-app-6eb1e',
-      storageBucket: 'my-diary-app-6eb1e.appspot.com',
-      messagingSenderId: '1027204805080',
-      appId: '1:1027204805080:web:52446129ee5d06e25242ad'
+      apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
+      authDomain: "my-diary-app-6eb1e.firebaseapp.com",
+      projectId: "my-diary-app-6eb1e",
+      storageBucket: "my-diary-app-6eb1e.appspot.com",
+      messagingSenderId: "1027204805080",
+      appId: "1:1027204805080:web:52446129ee5d06e25242ad"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
 
     function login() {
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -70,45 +102,115 @@
       auth.signOut();
     }
 
-    function showPage(pageId) {
-      ['calendar-page', 'diary-page', 'export-page'].forEach(id =>
-        document.getElementById(id).classList.add('hidden'));
-      document.getElementById(`${pageId}-page`).classList.remove('hidden');
-    }
-
-    function generateCalendar() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const calendar = document.getElementById('calendar-grid');
-      calendar.innerHTML = '';
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      for (let i = 0; i < firstDay; i++) {
-        calendar.appendChild(document.createElement('div'));
-      }
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dayDiv = document.createElement('div');
-        dayDiv.innerText = d;
-        if (d === today.getDate()) dayDiv.classList.add('today');
-        calendar.appendChild(dayDiv);
-      }
-    }
-
     auth.onAuthStateChanged(user => {
       if (user) {
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('app-section').classList.remove('hidden');
-        document.getElementById('today-date').innerText = new Date().toISOString().split('T')[0];
-        generateCalendar();
-      } else {
-        document.getElementById('login-section').classList.remove('hidden');
-        document.getElementById('app-section').classList.add('hidden');
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        loadToday();
+        loadCalendar();
+        loadExpenses();
       }
     });
+
+    function switchPage(id) {
+      ['calendar', 'diary', 'expense', 'settings'].forEach(p => {
+        document.getElementById(`${p}-page`).classList.add('hidden');
+      });
+      document.getElementById(`${id}-page`).classList.remove('hidden');
+    }
+
+    function loadToday() {
+      document.getElementById('today').innerText = new Date().toISOString().split('T')[0];
+    }
+
+    function loadCalendar() {
+      const date = new Date();
+      const days = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+      const start = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+      for (let i = 0; i < start; i++) calendar.innerHTML += '<div></div>';
+      for (let d = 1; d <= days; d++) {
+        const div = document.createElement('div');
+        div.innerText = d;
+        if (d === date.getDate()) div.classList.add('today');
+        div.onclick = () => {
+          document.getElementById('today').innerText = `${date.getFullYear()}-${date.getMonth()+1}-${d}`;
+        };
+        calendar.appendChild(div);
+      }
+    }
+
+    function saveDiary() {
+      const text = document.getElementById('diary-text').value;
+      const photo = document.getElementById('photo-upload').files[0];
+      const date = document.getElementById('today').innerText;
+      const uid = auth.currentUser.uid;
+      db.collection('diaries').doc(uid + '_' + date).set({ text, date });
+      if (photo) {
+        const ref = storage.ref(`diary_photos/${uid}/${date}`);
+        ref.put(photo);
+      }
+    }
+
+    function exportDiary(type) {
+      const data = [["Date", "Text"]];
+      db.collection('diaries').get().then(snapshot => {
+        snapshot.forEach(doc => data.push([doc.data().date, doc.data().text]));
+        const content = type === 'csv'
+          ? data.map(r => r.join(',')).join('\n')
+          : `<h1>Diary</h1>` + data.slice(1).map(d => `<h3>${d[0]}</h3><p>${d[1]}</p>`).join('');
+        const blob = new Blob([content], { type: type === 'csv' ? 'text/csv' : 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `diary_export.${type}`;
+        a.click();
+      });
+    }
+
+    function addExpense() {
+      const uid = auth.currentUser.uid;
+      const amount = document.getElementById('amount').value;
+      const note = document.getElementById('note').value;
+      db.collection('expenses').add({ uid, amount: parseFloat(amount), note, ts: Date.now() });
+      loadExpenses();
+    }
+
+    function loadExpenses() {
+      const uid = auth.currentUser.uid;
+      db.collection('expenses').where('uid', '==', uid).get().then(snapshot => {
+        const list = document.getElementById('expense-list');
+        const chart = document.getElementById('expense-chart');
+        const labels = [], values = [];
+        list.innerHTML = '';
+        snapshot.forEach(doc => {
+          const { amount, note, ts } = doc.data();
+          const li = document.createElement('li');
+          li.innerText = `${new Date(ts).toLocaleDateString()}: $${amount} - ${note}`;
+          list.appendChild(li);
+          labels.push(new Date(ts).toLocaleDateString());
+          values.push(amount);
+        });
+        new Chart(chart, {
+          type: 'bar',
+          data: { labels, datasets: [{ label: 'Expenses', data: values }] },
+          options: { responsive: true }
+        });
+      });
+    }
+
+    function setColor(varName, value) {
+      document.documentElement.style.setProperty(varName, value);
+    }
+
+    function setPin() {
+      const pin = document.getElementById('pin').value;
+      localStorage.setItem('pin', pin);
+    }
+
+    function showDiaryForm() {
+      switchPage('diary');
+    }
   </script>
 </body>
 </html>
