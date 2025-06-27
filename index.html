@@ -16,46 +16,10 @@
       --font-color: #333;
     }
     body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background-color: var(--bg-color);
       color: var(--font-color);
       font-family: 'Segoe UI', sans-serif;
-    }
-    .calendar-container {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin: 2rem;
-    }
-    .calendar-day {
-      background-color: white;
-      border-radius: 6px;
-      padding: 6px;
-      height: 80px;
-      position: relative;
-      cursor: pointer;
-      overflow: hidden;
-      font-size: 14px;
-    }
-    .calendar-day.work {
-      background-color: var(--work-color);
-    }
-    .calendar-day.holiday {
-      background-color: var(--holiday-color);
-    }
-    .calendar-day .date {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      font-weight: bold;
-    }
-    .calendar-day .events {
-      margin-top: 20px;
-      font-size: 12px;
-    }
-    .settings-panel {
-      padding: 1rem;
     }
     .navbar {
       background: white;
@@ -63,21 +27,53 @@
       display: flex;
       justify-content: space-between;
     }
+    .tabs { margin: 1rem; }
+    .calendar-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin: 1rem;
+    }
+    .calendar-day {
+      background-color: white;
+      border-radius: 6px;
+      padding: 6px;
+      height: 100px;
+      position: relative;
+      cursor: pointer;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .calendar-day.work { background-color: var(--work-color); }
+    .calendar-day.holiday { background-color: var(--holiday-color); }
+    .calendar-day .date { position: absolute; top: 4px; right: 4px; font-weight: bold; }
+    .calendar-day .events { margin-top: 20px; font-size: 12px; white-space: pre-wrap; }
+    .settings-panel { padding: 1rem; }
   </style>
 </head>
 <body>
   <div class="navbar">
-    <strong>行事曆</strong>
+    <strong>📅 日誌行事曆</strong>
     <button class="button is-danger" onclick="logout()">登出</button>
   </div>
 
-  <div class="calendar-container" id="calendar"></div>
+  <div class="tabs is-centered is-boxed">
+    <ul>
+      <li class="is-active" id="tab-calendar"><a onclick="showPage('calendar')">行事曆</a></li>
+      <li id="tab-settings"><a onclick="showPage('settings')">設定</a></li>
+    </ul>
+  </div>
 
-  <div class="settings-panel">
-    <label>背景顏色: <input type="color" onchange="setTheme(this.value, 'bg')"></label>
-    <label>字體顏色: <input type="color" onchange="setTheme(this.value, 'font')"></label>
-    <label>放假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label>
-    <label>上班顏色: <input type="color" onchange="setTheme(this.value, 'work')"></label>
+  <div id="calendar-page">
+    <div class="calendar-container" id="calendar"></div>
+  </div>
+
+  <div id="settings-page" class="settings-panel" style="display:none">
+    <h3 class="title is-5">介面顏色設定</h3>
+    <label>背景顏色: <input type="color" onchange="setTheme(this.value, 'bg')"></label><br>
+    <label>字體顏色: <input type="color" onchange="setTheme(this.value, 'font')"></label><br>
+    <label>放假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label><br>
+    <label>上班顏色: <input type="color" onchange="setTheme(this.value, 'work')"></label><br>
   </div>
 
   <script>
@@ -92,6 +88,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+
+    function showPage(id) {
+      document.getElementById('calendar-page').style.display = id === 'calendar' ? '' : 'none';
+      document.getElementById('settings-page').style.display = id === 'settings' ? '' : 'none';
+      document.getElementById('tab-calendar').classList.toggle('is-active', id === 'calendar');
+      document.getElementById('tab-settings').classList.toggle('is-active', id === 'settings');
+    }
 
     function setTheme(value, type) {
       if (type === 'bg') document.body.style.backgroundColor = value;
@@ -109,7 +112,6 @@
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
-
       const firstDay = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
 
@@ -122,11 +124,10 @@
       for (let d = 1; d <= totalDays; d++) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
-        const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const label = document.createElement('div');
         label.className = 'date';
         label.innerText = d;
-
         const eventArea = document.createElement('div');
         eventArea.className = 'events';
 
@@ -137,18 +138,24 @@
           if (doc.exists) {
             const data = doc.data();
             dayDiv.classList.add(data.type === 'holiday' ? 'holiday' : 'work');
-            eventArea.innerText = data.note || '';
+            eventArea.innerText = (data.notes || []).join('\n');
           } else {
             dayDiv.classList.add('work');
           }
         });
 
         dayDiv.onclick = () => {
-          const note = prompt(`編輯 ${dateStr} 活動筆記:`);
-          if (note === null) return;
+          const note = prompt(`新增 ${dateStr} 活動筆記:`);
+          if (note === null || note.trim() === '') return;
           const type = confirm('是否設為放假日期？') ? 'holiday' : 'work';
-          db.collection('calendars').doc(userId).collection('events').doc(dateStr).set({ type, note });
-          renderCalendar(userId);
+          db.collection('calendars').doc(userId).collection('events').doc(dateStr).get().then(doc => {
+            const prevNotes = (doc.exists && doc.data().notes) ? doc.data().notes : [];
+            db.collection('calendars').doc(userId).collection('events').doc(dateStr).set({
+              type,
+              notes: [...prevNotes, note]
+            });
+            renderCalendar(userId);
+          });
         };
 
         calendar.appendChild(dayDiv);
