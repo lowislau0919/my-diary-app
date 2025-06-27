@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
     <style>
       body {
-        background: #dcbaff; /* 淡紫色背景 */
+        background: #dcbaff;
         min-height: 100vh;
         padding: 0; margin: 0;
       }
@@ -31,6 +31,7 @@
         <button class="button is-success is-medium" onclick="login()">使用 Google 登入</button>
       </div>
     </section>
+
     <div class="main-container hidden" id="app-section">
       <aside class="menu p-4 has-background-white">
         <p class="menu-label">選單</p>
@@ -41,6 +42,7 @@
         </ul>
         <button class="button is-danger mt-4" onclick="logout()">登出</button>
       </aside>
+
       <section class="section" id="calendar-page">
         <h2 class="title">📅 行事曆</h2>
         <p>今天是：<span id="today-date"></span></p>
@@ -52,6 +54,7 @@
         <h2 class="title">📤 匯出功能稍後推出</h2>
       </section>
     </div>
+
     <script>
       const firebaseConfig = {
         apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
