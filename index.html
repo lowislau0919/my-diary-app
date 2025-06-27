@@ -76,7 +76,7 @@
   <div class="settings-panel">
     <label>背景顏色: <input type="color" onchange="setTheme(this.value, 'bg')"></label>
     <label>字體顏色: <input type="color" onchange="setTheme(this.value, 'font')"></label>
-    <label>收假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label>
+    <label>放假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label>
     <label>上班顏色: <input type="color" onchange="setTheme(this.value, 'work')"></label>
   </div>
 
@@ -146,7 +146,7 @@
         dayDiv.onclick = () => {
           const note = prompt(`編輯 ${dateStr} 活動筆記:`);
           if (note === null) return;
-          const type = confirm('是否設為收假日期？') ? 'holiday' : 'work';
+          const type = confirm('是否設為放假日期？') ? 'holiday' : 'work';
           db.collection('calendars').doc(userId).collection('events').doc(dateStr).set({ type, note });
           renderCalendar(userId);
         };
