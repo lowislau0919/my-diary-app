@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
     <style>
       body {
-        background: linear-gradient(to bottom right, #ba02e2, #87cefa);
+        background: #dcbaff; /* 淡紫色背景 */
         min-height: 100vh;
         padding: 0; margin: 0;
       }
@@ -45,6 +45,12 @@
         <h2 class="title">📅 行事曆</h2>
         <p>今天是：<span id="today-date"></span></p>
       </section>
+      <section class="section hidden" id="diary-page">
+        <h2 class="title">📖 日記功能稍後推出</h2>
+      </section>
+      <section class="section hidden" id="export-page">
+        <h2 class="title">📤 匯出功能稍後推出</h2>
+      </section>
     </div>
     <script>
       const firebaseConfig = {
@@ -68,9 +74,9 @@
       }
 
       function showPage(pageId) {
-        const sectionIds = ['calendar-page'];
+        const sectionIds = ['calendar-page', 'diary-page', 'export-page'];
         sectionIds.forEach(id => document.getElementById(id).classList.add('hidden'));
-        document.getElementById(`${pageId}-page`).classList.remove('hidden');
+        document.getElementById(${pageId}-page).classList.remove('hidden');
       }
 
       auth.onAuthStateChanged(user => {
@@ -86,4 +92,3 @@
     </script>
   </body>
 </html>
-<!-- (此處可貼返上面生成的 HTML，例如含日曆的版本) -->
