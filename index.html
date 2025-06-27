@@ -73,7 +73,7 @@
     function showPage(pageId) {
       ['calendar-page', 'diary-page', 'export-page'].forEach(id =>
         document.getElementById(id).classList.add('hidden'));
-      document.getElementById(${pageId}-page).classList.remove('hidden');
+      document.getElementById(`${pageId}-page`).classList.remove('hidden');
     }
 
     function generateCalendar() {
