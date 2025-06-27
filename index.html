@@ -1,155 +1,163 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📘 我的日曆</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日誌行事曆</title>
   <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body { background: var(--bg-color, #dcbaff); min-height: 100vh; margin: 0; padding: 0; }
-    .hidden { display: none; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 1rem; }
-    .calendar div { padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; }
-    .workday { background-color: var(--work-color, #eeeeee); }
-    .holiday { background-color: var(--holiday-color, #c3f7c7); }
-    .today { font-weight: bold; border: 2px solid red; }
+    :root {
+      --work-color: #b2fba5;
+      --holiday-color: #ff8a80;
+      --bg-color: #e1caff;
+      --font-color: #333;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--font-color);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .calendar-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin: 2rem;
+    }
+    .calendar-day {
+      background-color: white;
+      border-radius: 6px;
+      padding: 6px;
+      height: 80px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    .calendar-day.work {
+      background-color: var(--work-color);
+    }
+    .calendar-day.holiday {
+      background-color: var(--holiday-color);
+    }
+    .calendar-day .date {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-weight: bold;
+    }
+    .calendar-day .events {
+      margin-top: 20px;
+      font-size: 12px;
+    }
+    .settings-panel {
+      padding: 1rem;
+    }
+    .navbar {
+      background: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
-  <section class="section" id="login-section">
-    <div class="container has-text-centered">
-      <h1 class="title">歡迎來到我的日曆</h1>
-      <button class="button is-success is-medium" onclick="login()">使用 Google 登入</button>
-    </div>
-  </section>
+  <div class="navbar">
+    <strong>行事曆</strong>
+    <button class="button is-danger" onclick="logout()">登出</button>
+  </div>
 
-  <div id="app-section" class="main-container hidden">
-    <nav class="tabs is-boxed is-fullwidth">
-      <ul>
-        <li class="is-active"><a onclick="showPage('calendar')">行事曆</a></li>
-        <li><a onclick="showPage('settings')">設定</a></li>
-        <li><a onclick="logout()" class="has-text-danger">登出</a></li>
-      </ul>
-    </nav>
+  <div class="calendar-container" id="calendar"></div>
 
-    <section class="section" id="calendar-page">
-      <h2 class="title">📅 行事曆</h2>
-      <p>今天是：<span id="today-date"></span></p>
-      <div class="calendar" id="calendar-grid"></div>
-    </section>
-
-    <section class="section hidden" id="settings-page">
-      <h2 class="title">⚙️ 顏色設定</h2>
-      <div class="field">
-        <label class="label">返工顏色</label>
-        <input id="work-color" type="color" class="input" value="#eeeeee" />
-      </div>
-      <div class="field">
-        <label class="label">放假顏色</label>
-        <input id="holiday-color" type="color" class="input" value="#c3f7c7" />
-      </div>
-      <button class="button is-link" onclick="saveTheme()">儲存顏色</button>
-    </section>
+  <div class="settings-panel">
+    <label>背景顏色: <input type="color" onchange="setTheme(this.value, 'bg')"></label>
+    <label>字體顏色: <input type="color" onchange="setTheme(this.value, 'font')"></label>
+    <label>收假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label>
+    <label>上班顏色: <input type="color" onchange="setTheme(this.value, 'work')"></label>
   </div>
 
   <script>
     const firebaseConfig = {
-      apiKey: 'AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY',
-      authDomain: 'my-diary-app-6eb1e.firebaseapp.com',
-      projectId: 'my-diary-app-6eb1e',
-      storageBucket: 'my-diary-app-6eb1e.appspot.com',
-      messagingSenderId: '1027204805080',
-      appId: '1:1027204805080:web:52446129ee5d06e25242ad'
+      apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
+      authDomain: "my-diary-app-6eb1e.firebaseapp.com",
+      projectId: "my-diary-app-6eb1e",
+      storageBucket: "my-diary-app-6eb1e.appspot.com",
+      messagingSenderId: "1027204805080",
+      appId: "1:1027204805080:web:52446129ee5d06e25242ad"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    let currentUserId = null;
-    let dayStatus = {}; // e.g., { "2025-06-28": "work", "2025-06-29": "holiday" }
-
-    function login() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider);
+    function setTheme(value, type) {
+      if (type === 'bg') document.body.style.backgroundColor = value;
+      if (type === 'font') document.body.style.color = value;
+      if (type === 'holiday') document.documentElement.style.setProperty('--holiday-color', value);
+      if (type === 'work') document.documentElement.style.setProperty('--work-color', value);
     }
 
     function logout() {
       auth.signOut();
     }
 
-    function showPage(pageId) {
-      ["calendar-page", "settings-page"].forEach(id =>
-        document.getElementById(id).classList.add("hidden")
-      );
-      document.getElementById(`${pageId}-page`).classList.remove("hidden");
-    }
-
-    function saveTheme() {
-      const workColor = document.getElementById("work-color").value;
-      const holidayColor = document.getElementById("holiday-color").value;
-      localStorage.setItem("work-color", workColor);
-      localStorage.setItem("holiday-color", holidayColor);
-      document.documentElement.style.setProperty("--work-color", workColor);
-      document.documentElement.style.setProperty("--holiday-color", holidayColor);
-    }
-
-    function applyTheme() {
-      document.documentElement.style.setProperty("--work-color", localStorage.getItem("work-color") || "#eeeeee");
-      document.documentElement.style.setProperty("--holiday-color", localStorage.getItem("holiday-color") || "#c3f7c7");
-    }
-
-    function toggleDayStatus(dateStr) {
-      const status = dayStatus[dateStr] === "holiday" ? "work" : "holiday";
-      dayStatus[dateStr] = status;
-      db.collection("users").doc(currentUserId).collection("calendar").doc(dateStr).set({ status });
-      generateCalendar();
-    }
-
-    function generateCalendar() {
+    function renderCalendar(userId) {
+      const calendar = document.getElementById('calendar');
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
-      const calendar = document.getElementById("calendar-grid");
-      calendar.innerHTML = "";
 
       const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const totalDays = new Date(year, month + 1, 0).getDate();
 
+      calendar.innerHTML = '';
       for (let i = 0; i < firstDay; i++) {
-        calendar.appendChild(document.createElement("div"));
+        const blank = document.createElement('div');
+        calendar.appendChild(blank);
       }
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const day = new Date(year, month, d);
-        const dateStr = day.toISOString().split("T")[0];
-        const div = document.createElement("div");
-        div.innerText = d;
-        div.className = dayStatus[dateStr] === "holiday" ? "holiday" : "workday";
-        if (d === today.getDate()) div.classList.add("today");
-        div.onclick = () => toggleDayStatus(dateStr);
-        calendar.appendChild(div);
+      for (let d = 1; d <= totalDays; d++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        const label = document.createElement('div');
+        label.className = 'date';
+        label.innerText = d;
+
+        const eventArea = document.createElement('div');
+        eventArea.className = 'events';
+
+        dayDiv.appendChild(label);
+        dayDiv.appendChild(eventArea);
+
+        db.collection('calendars').doc(userId).collection('events').doc(dateStr).get().then(doc => {
+          if (doc.exists) {
+            const data = doc.data();
+            dayDiv.classList.add(data.type === 'holiday' ? 'holiday' : 'work');
+            eventArea.innerText = data.note || '';
+          } else {
+            dayDiv.classList.add('work');
+          }
+        });
+
+        dayDiv.onclick = () => {
+          const note = prompt(`編輯 ${dateStr} 活動筆記:`);
+          if (note === null) return;
+          const type = confirm('是否設為收假日期？') ? 'holiday' : 'work';
+          db.collection('calendars').doc(userId).collection('events').doc(dateStr).set({ type, note });
+          renderCalendar(userId);
+        };
+
+        calendar.appendChild(dayDiv);
       }
     }
 
-    auth.onAuthStateChanged(async user => {
-      if (user) {
-        currentUserId = user.uid;
-        document.getElementById("login-section").classList.add("hidden");
-        document.getElementById("app-section").classList.remove("hidden");
-        document.getElementById("today-date").innerText = new Date().toISOString().split("T")[0];
-        applyTheme();
-        const snapshot = await db.collection("users").doc(currentUserId).collection("calendar").get();
-        snapshot.forEach(doc => {
-          dayStatus[doc.id] = doc.data().status;
-        });
-        generateCalendar();
-      } else {
-        document.getElementById("login-section").classList.remove("hidden");
-        document.getElementById("app-section").classList.add("hidden");
-      }
+    auth.onAuthStateChanged(user => {
+      if (user) renderCalendar(user.uid);
+      else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     });
   </script>
 </body>
