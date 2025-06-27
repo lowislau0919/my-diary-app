@@ -1,1 +1,89 @@
-﻿<!-- (此處可貼返上面生成的 HTML，例如含日曆的版本) -->
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>📘 我的日曆</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+    <style>
+      body {
+        background: linear-gradient(to bottom right, #ba02e2, #87cefa);
+        min-height: 100vh;
+        padding: 0; margin: 0;
+      }
+      .hidden { display: none; }
+      .floating-btn {
+        position: fixed; bottom: 24px; right: 24px;
+        width: 56px; height: 56px; background-color: #3f51b5;
+        color: white; font-size: 32px; border: none;
+        border-radius: 50%; cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <section class="section" id="login-section">
+      <div class="container has-text-centered">
+        <h1 class="title has-text-white">歡迎來到我的日曆</h1>
+        <button class="button is-success is-medium" onclick="login()">使用 Google 登入</button>
+      </div>
+    </section>
+    <div class="main-container hidden" id="app-section">
+      <aside class="menu p-4 has-background-white">
+        <p class="menu-label">選單</p>
+        <ul class="menu-list">
+          <li><a class="is-active" onclick="showPage('calendar')">📅 行事曆</a></li>
+          <li><a onclick="showPage('diary')">📖 日記（稍後推出）</a></li>
+          <li><a onclick="showPage('export')">📤 匯出（稍後推出）</a></li>
+        </ul>
+        <button class="button is-danger mt-4" onclick="logout()">登出</button>
+      </aside>
+      <section class="section" id="calendar-page">
+        <h2 class="title">📅 行事曆</h2>
+        <p>今天是：<span id="today-date"></span></p>
+      </section>
+    </div>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
+        authDomain: "my-diary-app-6eb1e.firebaseapp.com",
+        projectId: "my-diary-app-6eb1e",
+        storageBucket: "my-diary-app-6eb1e.appspot.com",
+        messagingSenderId: "1027204805080",
+        appId: "1:1027204805080:web:52446129ee5d06e25242ad"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+
+      function login() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider);
+      }
+
+      function logout() {
+        auth.signOut();
+      }
+
+      function showPage(pageId) {
+        const sectionIds = ['calendar-page'];
+        sectionIds.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(`${pageId}-page`).classList.remove('hidden');
+      }
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          document.getElementById("login-section").classList.add("hidden");
+          document.getElementById("app-section").classList.remove("hidden");
+          document.getElementById("today-date").innerText = new Date().toISOString().split('T')[0];
+        } else {
+          document.getElementById("login-section").classList.remove("hidden");
+          document.getElementById("app-section").classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>
+<!-- (此處可貼返上面生成的 HTML，例如含日曆的版本) -->
