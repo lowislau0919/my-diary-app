@@ -12,7 +12,8 @@
       body {
         background: #dcbaff;
         min-height: 100vh;
-        padding: 0; margin: 0;
+        margin: 0;
+        padding: 0;
       }
       .hidden { display: none; }
     </style>
@@ -70,19 +71,19 @@
       }
 
       function showPage(pageId) {
-        const ids = ['calendar-page', 'diary-page', 'export-page'];
-        ids.forEach(id => document.getElementById(id).classList.add('hidden'));
-        document.getElementById(${pageId}-page).classList.remove('hidden');
+        const pages = ['calendar-page', 'diary-page', 'export-page'];
+        pages.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(pageId + '-page').classList.remove('hidden');
       }
 
       auth.onAuthStateChanged(user => {
         if (user) {
-          document.getElementById("login-section").classList.add("hidden");
-          document.getElementById("app-section").classList.remove("hidden");
-          document.getElementById("today-date").innerText = new Date().toISOString().split('T')[0];
+          document.getElementById('login-section').classList.add('hidden');
+          document.getElementById('app-section').classList.remove('hidden');
+          document.getElementById('today-date').innerText = new Date().toISOString().split('T')[0];
         } else {
-          document.getElementById("login-section").classList.remove("hidden");
-          document.getElementById("app-section").classList.add("hidden");
+          document.getElementById('login-section').classList.remove('hidden');
+          document.getElementById('app-section').classList.add('hidden');
         }
       });
     </script>
