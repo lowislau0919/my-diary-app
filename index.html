@@ -15,13 +15,6 @@
         padding: 0; margin: 0;
       }
       .hidden { display: none; }
-      .floating-btn {
-        position: fixed; bottom: 24px; right: 24px;
-        width: 56px; height: 56px; background-color: #3f51b5;
-        color: white; font-size: 32px; border: none;
-        border-radius: 50%; cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      }
     </style>
   </head>
   <body>
@@ -77,8 +70,8 @@
       }
 
       function showPage(pageId) {
-        const sectionIds = ['calendar-page', 'diary-page', 'export-page'];
-        sectionIds.forEach(id => document.getElementById(id).classList.add('hidden'));
+        const ids = ['calendar-page', 'diary-page', 'export-page'];
+        ids.forEach(id => document.getElementById(id).classList.add('hidden'));
         document.getElementById(${pageId}-page).classList.remove('hidden');
       }
 
