@@ -1,10 +1,11 @@
+<!-- 🔥 index.html 完整修正版 🔥 -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>多功能日曆</title>
-  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -152,6 +153,7 @@
           const input = prompt(`輸入 ${dateStr} 新活動：`);
           if (input === null || input.trim() === '') return;
           const isHoliday = confirm('是否設為放假日期？');
+
           const docRef = db.collection('calendars').doc(userId).collection('events').doc(dateStr);
           docRef.get().then(doc => {
             const data = doc.exists ? doc.data() : { events: [] };
@@ -165,13 +167,13 @@
       }
     }
 
+    // 處理登入狀態變化
     auth.onAuthStateChanged(user => {
-      if (user) {
-        renderCalendar(user.uid);
-      }
+      if (user) renderCalendar(user.uid);
     });
 
-    firebase.auth().getRedirectResult().then(result => {
+    // 處理登入返回時的重導結果
+    auth.getRedirectResult().then(result => {
       if (result.user) {
         renderCalendar(result.user.uid);
       } else if (!auth.currentUser) {
@@ -181,6 +183,7 @@
       }
     }).catch(error => {
       console.error("登入錯誤：", error);
+      alert("登入失敗，請重新整理");
     });
   </script>
 </body>
