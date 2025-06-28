@@ -152,7 +152,6 @@
           const input = prompt(`輸入 ${dateStr} 新活動：`);
           if (input === null || input.trim() === '') return;
           const isHoliday = confirm('是否設為放假日期？');
-
           const docRef = db.collection('calendars').doc(userId).collection('events').doc(dateStr);
           docRef.get().then(doc => {
             const data = doc.exists ? doc.data() : { events: [] };
@@ -167,12 +166,21 @@
     }
 
     auth.onAuthStateChanged(user => {
-      if (user) renderCalendar(user.uid);
-      else {
+      if (user) {
+        renderCalendar(user.uid);
+      }
+    });
+
+    firebase.auth().getRedirectResult().then(result => {
+      if (result.user) {
+        renderCalendar(result.user.uid);
+      } else if (!auth.currentUser) {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
         auth.signInWithRedirect(provider);
       }
+    }).catch(error => {
+      console.error("登入錯誤：", error);
     });
   </script>
 </body>
