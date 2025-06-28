@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>多功能日曆</title>
-  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -64,41 +64,59 @@
     .settings-panel {
       padding: 1rem;
     }
-    select, input[type="color"] {
-      margin-left: 8px;
+    .login-box {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
     }
-    #loading {
+    .hidden {
       display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(255, 255, 255, 0.9);
-      z-index: 9999;
-      font-size: 24px;
-      text-align: center;
-      line-height: 100vh;
     }
   </style>
 </head>
 <body>
-  <div id="loading">載入中，請稍候...</div>
-
-  <div class="navbar">
+  <div class="navbar hidden" id="navbar">
     <strong>多功能日曆</strong>
     <button class="button is-danger" onclick="logout()">登出</button>
   </div>
 
-  <div class="settings-panel">
+  <div class="settings-panel hidden" id="settingsPanel">
     <label>背景顏色: <input type="color" onchange="setTheme(this.value, 'bg')"></label>
     <label>字體顏色: <input type="color" onchange="setTheme(this.value, 'font')"></label>
     <label>放假顏色: <input type="color" onchange="setTheme(this.value, 'holiday')"></label>
     <label>上班顏色: <input type="color" onchange="setTheme(this.value, 'work')"></label>
   </div>
 
-  <div class="calendar-container" id="calendar"></div>
+  <div class="calendar-container hidden" id="calendar"></div>
 
+  <div class="login-box" id="loginBox">
+    <h2 class="title is-4">登入／註冊</h2>
+    <div class="field">
+      <label class="label">電子郵件</label>
+      <div class="control">
+        <input id="email" class="input" type="email" placeholder="you@example.com" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">密碼</label>
+      <div class="control">
+        <input id="password" class="input" type="password" placeholder="密碼" />
+      </div>
+    </div>
+    <div class="field">
+      <div class="control">
+        <button class="button is-link" onclick="login()">登入</button>
+        <button class="button is-light" onclick="signup()">註冊</button>
+        <button class="button is-text" onclick="resetPassword()">忘記密碼？</button>
+      </div>
+    </div>
+    <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY"></div>
+  </div>
+
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyC6vdUNMsL1q9M5Yx8W-KuHC3H-tCGL0eY",
@@ -119,14 +137,54 @@
       if (type === 'work') document.documentElement.style.setProperty('--work-color', value);
     }
 
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const captcha = grecaptcha.getResponse();
+      if (!captcha) return alert("請完成驗證碼");
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          if (!userCredential.user.emailVerified) {
+            alert("請先驗證電郵再登入。");
+            auth.signOut();
+          }
+        })
+        .catch(error => alert(error.message));
+    }
+
+    function signup() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const captcha = grecaptcha.getResponse();
+      if (!captcha) return alert("請完成驗證碼");
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          userCredential.user.sendEmailVerification();
+          alert("註冊成功，請查收電郵進行驗證。");
+        })
+        .catch(error => alert(error.message));
+    }
+
+    function resetPassword() {
+      const email = document.getElementById('email').value;
+      if (!email) return alert("請輸入電郵");
+      auth.sendPasswordResetEmail(email).then(() => {
+        alert("已發送重設密碼連結到電郵。");
+      }).catch(error => alert(error.message));
+    }
+
     function logout() {
-      auth.signOut().then(() => {
-        location.reload();
-      });
+      auth.signOut().then(() => location.reload());
     }
 
     function renderCalendar(userId) {
-      document.getElementById('loading').style.display = 'none';
+      document.getElementById('calendar').classList.remove('hidden');
+      document.getElementById('navbar').classList.remove('hidden');
+      document.getElementById('settingsPanel').classList.remove('hidden');
+      document.getElementById('loginBox').classList.add('hidden');
+
       const calendar = document.getElementById('calendar');
       const today = new Date();
       const year = today.getFullYear();
@@ -183,24 +241,10 @@
       }
     }
 
-    // Show loading screen while checking auth
-    document.getElementById('loading').style.display = 'block';
-
-    firebase.auth().getRedirectResult().then(result => {
-      if (result.user) {
-        renderCalendar(result.user.uid);
-      } else if (!auth.currentUser) {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        auth.signInWithRedirect(provider);
-      }
-    }).catch(error => {
-      alert("登入錯誤：" + error.message);
-      console.error("登入錯誤：", error);
-    });
-
     auth.onAuthStateChanged(user => {
-      if (user) renderCalendar(user.uid);
+      if (user && user.emailVerified) {
+        renderCalendar(user.uid);
+      }
     });
   </script>
 </body>
